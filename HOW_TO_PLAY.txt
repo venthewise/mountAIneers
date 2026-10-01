@@ -1,0 +1,145 @@
+HOW TO PLAY MOUNTAINEERS
+========================
+
+This is a mountain-climbing game. You are the expedition organizer. You do not climb. The climbers are AI.
+
+The mountain is always the same peak: Thalun, 8,126 metres. Six stops, bottom to top:
+
+  Base Camp → Camp 1 → Camp 2 → Camp 3 → South Col → Summit
+
+To win, an AI must stand on the summit and walk all the way back to Base Camp alive. Reaching the top is only half the job. Most of the danger is on the way down.
+
+
+OPEN THE GAME
+-------------
+
+In a terminal, from this folder:
+
+  npm run start
+
+Then open a browser to:
+
+  http://127.0.0.1:3847
+
+You should see the lobby: a start screen with ways to add climbers, and a “Rope” list on the right. If you see a dark panel that says “Rolling this season” before you have pressed Start, refresh the page (Ctrl+F5).
+
+
+THE BASIC LOOP
+--------------
+
+1. Add at least one AI climber to the Rope.
+2. Press “Start expedition”.
+3. The game draws this climb’s weather (sky, wind, cold, icefall). The shape of the mountain does not change.
+4. Watch the AIs take turns. You cannot click moves for them.
+5. When the season ends, press “Return to lobby” and run another climb if you want.
+
+On the Rope, click edit on any climber to change their callsign, Style (heuristic), or standing orders. Heuristic climbers follow Style. LLM and MCP climbers read standing orders at the top of every briefing.
+
+Settings sit under the Rope. Tick “Fair weather (test)” before Start to lock clear skies and turn off icefall falls, so a first run is easier to follow. Skin: Field office is the current board. 63-bit pixel is a chunky retro CRT look for the whole UI (lobby, map, cards, talk). It sticks until you switch it back.
+
+
+THREE KINDS OF CLIMBER
+----------------------
+
+You can mix them on the same rope.
+
+
+1. Heuristic climbers  (no account, no cost)
+
+A heuristic is a simple built-in brain. It is not a chatbot. The three house names each climb a different way:
+
+  Serac    Patient alpinist. Waits out weather, rests often, never enters the death zone without oxygen.
+  Cornice  Summit pusher. Climbs on wind and snow, rests little, will gamble the col with thin tanks.
+  Scree    Siege porter. Stashes food and oxygen on the way up, radios the rope, crosses the icefall only when fresh.
+
+Use “Add heuristic” (type a name, pick a Style) or “Add Serac, Cornice, Scree”. A custom name can still use any of those three styles. Edit the climber on the Rope to change Style later.
+
+Use these to see the game work with zero setup.
+
+
+2. LLM climbers  (your key, your bill)
+
+An LLM is a large language model — Grok, or another chat model you point at. Each turn the mountain sends it a briefing (where it is, weather, energy, food, oxygen). It answers with one action: move, rest, wait, stash gear, pick up gear, or radio.
+
+On the lobby, use “Configure LLM on site”:
+
+  - SpaceXAI (Grok): paste your API key. Default model is grok-4.3.
+  - OpenAI-compatible: paste a base web address, model name, and key (for example a local model server).
+
+The key stays in the computer’s memory for that session. The game itself does not pay for those messages. You do.
+
+On the form, write standing orders if you want: a short brief this climber reads every turn. Write how they climb, and how they talk — witty, reckless, patient, dumb. Each turn they must say a line (white in Ridge talk) and a plain-English why for the move (yellow, as ACT: / TO: / SAY: / WHY:). The mountain already tells the model that South Col (c4) is the only door to the summit and to rest when tired. You can edit the brief on the Rope after you add them.
+
+
+3. MCP climbers  (an AI assistant joining from another app)
+
+MCP is a small plug so an outside AI assistant (Claude, Grok, Codex, Cursor, and similar) can join as a climber instead of being configured on the web form.
+
+The assistant connects to:
+
+  http://127.0.0.1:3847/mcp
+
+It gives itself a name, then waits. You will see it appear on the Rope. When you press Start, it is allowed to climb.
+
+After an MCP climber appears on the Rope, click edit and pin standing orders the same way.
+
+If someone asks “what is the skill?” — that is the rule sheet written for the AI, not for you. It lives at:
+
+  http://127.0.0.1:3847/skill.md
+
+Think of the skill as a briefing packet: who may climb, how to wait in the lobby, legal moves, and the win condition. You do not fill it in. The assistant reads it.
+
+
+WHAT THE AIS MAY DO EACH TURN
+-----------------------------
+
+  Move    Walk to the next camp up or down. Storms block going up.
+  Rest    Recover energy. Spends food. Safer in camp.
+  Wait    Do nothing useful. Time still passes.
+  Cache   Leave oxygen or food at this camp for later.
+  Take    Pick up what someone cached.
+  Radio   Send a short public message on the log.
+
+Turns are shared. When every living climber has chosen (or the clock runs out), the mountain resolves the turn together.
+
+
+SURVIVAL, IN PLAIN LANGUAGE
+---------------------------
+
+Energy is stamina. Moves cost a lot; rest brings it back.
+
+Food is eaten when resting or waiting. Run out for too long and you starve.
+
+Oxygen matters from the South Col and the Summit (the death zone, 7,500 m and up). Each turn up there spends one bottle if you have one. No bottle means altitude sickness builds. Three strikes of that, and the climber dies. (You may see this written as AMS in other climbing texts. Here it is always called altitude sickness.)
+
+Camp 1 is the icefall. Tired climbers in bad weather can fall.
+
+Frostbite and storms punish lingering high with empty tanks.
+
+A season is 48 turns (about twelve game-days). If nobody is home with a summit tag by then, the season closes.
+
+
+WHAT YOU ARE LOOKING AT
+-----------------------
+
+The map is the ridge. Dots are climbers. The death zone camps are marked in red-orange.
+
+The left-hand column is two equal panels: Survival (a fixed field guide) and Ridge talk (what they said in white, then ACT: / TO: / SAY: / WHY: in yellow).
+
+The right-hand column is this season’s status and the expedition log (weather, moves, radios, deaths, summits).
+
+Along the bottom, each climber has a compact card with live survival numbers: energy, food, oxygen, altitude sickness, icefall, frostbite, season. You do not need to click anyone to see how they are holding.
+
+“Seed” is the number for this climb’s random weather. Same seed, same weather. A new Start draws a new seed.
+
+
+A GOOD FIRST RUN
+----------------
+
+1. Open the lobby.
+2. Click “Add Serac, Cornice, Scree”.
+3. Tick “Fair weather (test)”.
+4. Press Start.
+5. Watch them try to summit and come home.
+
+After that, add a Grok climber with your key, or point an MCP assistant at /mcp, and run a real-weather season.

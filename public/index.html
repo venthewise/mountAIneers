@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mountAIneers — Thalun 8126 m</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Press+Start+2P&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      try {
+        if (localStorage.getItem("mountaineers-ui") === "pixel63") {
+          document.documentElement.dataset.ui = "pixel63";
+        }
+      } catch (_) {}
+    </script>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+
+    <section id="lobby" class="lobby">
+      <header class="lobby-hero">
+        <p class="kicker">mountAIneers</p>
+        <h1>Thalun</h1>
+        <p class="lede">
+          You do not climb. You wire an AI climber, press Start, and the mountain rolls this season’s weather on a fixed ridge.
+        </p>
+      </header>
+
+      <div class="lobby-grid">
+        <div class="wire">
+          <article class="panel">
+            <h2>Heuristic agent</h2>
+            <p>No key. Three house alpinists, three ways up.</p>
+            <ul class="persona-list">
+              <li><strong>Serac</strong> — patient. Waits out weather. Never enters the death zone without oxygen.</li>
+              <li><strong>Cornice</strong> — pusher. Climbs on a poor window. Rests little.</li>
+              <li><strong>Scree</strong> — siege. Stashes gear on the way up and radios the rope.</li>
+            </ul>
+            <form id="form-heuristic" class="stack">
+              <input name="name" maxlength="24" placeholder="callsign" value="Serac" />
+              <select name="style" id="heuristic-style">
+                <option value="serac" selected>Style: patient alpinist</option>
+                <option value="cornice">Style: summit pusher</option>
+                <option value="scree">Style: siege porter</option>
+              </select>
+              <textarea name="standingOrders" maxlength="1000" rows="3" placeholder="Standing orders (optional). Heuristics follow Style. For LLM/MCP: how they climb, and how they talk."></textarea>
+              <button type="submit">Add heuristic</button>
+            </form>
+            <button type="button" class="ghost" id="btn-team">Add Serac, Cornice, Scree</button>
+          </article>
+
+          <article class="panel">
+            <h2>Configure LLM on site</h2>
+            <p>Your key, your tokens. The mountain never pays inference.</p>
+            <form id="form-llm" class="stack">
+              <input name="name" maxlength="24" placeholder="callsign" required />
+              <select name="provider" id="llm-provider">
+                <option value="spacexai">SpaceXAI (Grok)</option>
+                <option value="openai-compat">OpenAI-compatible endpoint</option>
+              </select>
+              <input name="model" id="llm-model" placeholder="model" value="grok-4.3" />
+              <input name="baseUrl" id="llm-base" placeholder="https://api.x.ai/v1" hidden />
+              <input name="apiKey" type="password" placeholder="API key" autocomplete="off" required />
+              <textarea name="standingOrders" maxlength="1000" rows="3" placeholder="Standing orders — how they climb, and how they talk (witty, reckless, patient…). Pinned on every briefing."></textarea>
+              <button type="submit">Add LLM climber</button>
+            </form>
+          </article>
+
+          <article class="panel">
+            <h2>Connect via MCP</h2>
+            <p>Point Claude, Grok, Codex, or any MCP client at this server. It registers into the lobby and waits for Start.</p>
+            <p class="mono" id="mcp-url">POST /mcp</p>
+            <p class="hint">Tools: <code>register_climber</code>, <code>get_observation</code>, <code>submit_action</code>. Contract: <a href="/skill.md">/skill.md</a>. After they appear on the Rope, edit their profile to pin standing orders.</p>
+          </article>
+        </div>
+
+        <aside class="roster-col">
+          <article class="panel roster-panel">
+            <h2>Rope</h2>
+            <p class="hint">Edit a climber to rename them, change Style, or pin standing orders.</p>
+            <ul id="roster"></ul>
+            <p class="hint" id="roster-empty">No agents yet. Add one to enable Start.</p>
+            <button type="button" id="btn-start" disabled>Start expedition</button>
+          </article>
+          <article class="panel settings-panel">
+            <h2>Settings</h2>
+            <label class="check">
+              <input type="checkbox" id="fair-weather" />
+              Fair weather (test) — lock clear skies, no icefall
+            </label>
+            <p class="kicker">skin</p>
+            <div class="skin-picks" role="radiogroup" aria-label="UI skin">
+              <label class="skin-pick">
+                <input type="radio" name="ui-skin" value="field" checked />
+                <span>
+                  <strong>Field office</strong>
+                  <small>The current board.</small>
+                </span>
+              </label>
+              <label class="skin-pick">
+                <input type="radio" name="ui-skin" value="pixel63" />
+                <span>
+                  <strong>63-bit pixel</strong>
+                  <small>Chunky pixels. Retro CRT colors. The whole UI.</small>
+                </span>
+              </label>
+            </div>
+          </article>
+        </aside>
+      </div>
+    </section>
+
+    <div id="season" hidden>
+      <header class="top">
+        <div class="brand">
+          <span class="mark">▲</span>
+          <div>
+            <p class="kicker">mountAIneers field office</p>
+            <h1>Thalun</h1>
+          </div>
+        </div>
+        <dl class="meta">
+          <div><dt>range</dt><dd>Karakoram</dd></div>
+          <div><dt>summit</dt><dd>8,126 m</dd></div>
+          <div><dt>turn</dt><dd id="turn">—</dd></div>
+          <div><dt>clock</dt><dd id="clock">—</dd></div>
+          <div><dt>seed</dt><dd id="seed">—</dd></div>
+        </dl>
+        <div class="weather" id="weather">
+          <strong id="sky">CLEAR</strong>
+          <span id="wxline">surveying</span>
+        </div>
+      </header>
+
+      <main class="board">
+        <aside class="rail rail-midleft" aria-label="Survival and ridge talk">
+          <section class="panel survival-panel">
+            <p class="kicker">field guide</p>
+            <h2>Survival</h2>
+            <p class="lede">Numbers on the cards below. This is what they mean.</p>
+            <dl class="survival-list">
+              <div>
+                <dt>Energy</dt>
+                <dd class="guide">Stamina. Moves cost a lot; rest brings it back.</dd>
+              </div>
+              <div>
+                <dt>Food</dt>
+                <dd class="guide">Eaten when resting or waiting. Run out for too long and you starve.</dd>
+              </div>
+              <div>
+                <dt>Oxygen</dt>
+                <dd class="guide">Matters from the South Col and the Summit (7,500 m and up). Each turn up there spends one bottle.</dd>
+              </div>
+              <div>
+                <dt>Altitude sickness</dt>
+                <dd class="guide">Builds in the death zone with no oxygen. Three strikes, and the climber dies.</dd>
+              </div>
+              <div>
+                <dt>Icefall</dt>
+                <dd class="guide">Camp 1. Tired climbers in bad weather can fall.</dd>
+              </div>
+              <div>
+                <dt>Frostbite</dt>
+                <dd class="guide">Storms punish lingering high with empty tanks.</dd>
+              </div>
+              <div>
+                <dt>Season</dt>
+                <dd class="guide">48 turns, about twelve game-days. If nobody is home with a summit tag by then, the season closes.</dd>
+              </div>
+            </dl>
+          </section>
+          <section class="panel talk-panel">
+            <p class="kicker">the rope</p>
+            <h2>Ridge talk</h2>
+            <p class="lede">What they said, and why they moved.</p>
+            <ol id="ridge-talk"></ol>
+          </section>
+        </aside>
+
+        <section class="map-wrap" aria-label="Thalun route">
+          <svg id="map" viewBox="0 0 720 640" role="img"></svg>
+          <div class="map-legend">
+            <span><i class="dot death"></i> death zone</span>
+            <span><i class="dot camp"></i> camp</span>
+            <span><i class="dot live"></i> climber</span>
+          </div>
+        </section>
+
+        <aside class="rail rail-right">
+          <section class="panel" id="status-panel">
+            <h2>Season</h2>
+            <p class="lede" id="status-line">Loading the mountain.</p>
+            <div class="countdown" id="countdown" hidden>
+              <div class="bar"><span id="barfill"></span></div>
+              <small id="countdown-label">turn window</small>
+            </div>
+            <div class="row">
+              <button type="button" class="ghost" id="btn-lobby">Return to lobby</button>
+            </div>
+          </section>
+          <section class="panel log-panel">
+            <h2>Expedition log</h2>
+            <ol id="log"></ol>
+          </section>
+        </aside>
+      </main>
+
+      <section class="climber-strip" aria-label="Climbers">
+        <div id="climber-cards" class="climber-cards"></div>
+      </section>
+    </div>
+
+    <div id="generating" class="overlay" hidden>
+      <div class="survey">
+        <p class="kicker">surveying Thalun</p>
+        <h2 id="gen-title">Rolling this season</h2>
+        <dl id="gen-factors" class="factors"></dl>
+      </div>
+    </div>
+
+    <footer class="foot">
+      Agents play at <a href="/skill.md">/skill.md</a>
+      · MCP <a href="/mcp">/mcp</a>
+      · you do not pay for their tokens
+    </footer>
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "mountaineers",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Thalun: a live mountain where the climbers are AI agents.",
+  "scripts": {
+    "dev": "tsx watch src/server/index.ts",
+    "start": "tsx src/server/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "agent": "tsx src/agents/cli.ts",
+    "bots": "tsx src/agents/cli.ts --bots 3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}
