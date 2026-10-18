@@ -85,9 +85,10 @@ export function createHttpServer(game: Game, publicDir: string) {
           style?: string;
           standingOrders?: string;
         };
-        const provider = body.provider as Provider | undefined;
-        if (provider !== "heuristic" && provider !== "spacexai" && provider !== "openai-compat") {
-          return json(res, 400, { error: "provider must be heuristic | spacexai | openai-compat" });
+        // "spacexai" is accepted as a legacy alias for "xai".
+        const provider = (body.provider === "spacexai" ? "xai" : body.provider) as Provider | undefined;
+        if (provider !== "heuristic" && provider !== "openai-compat" && provider !== "xai") {
+          return json(res, 400, { error: "provider must be heuristic | openai-compat | xai" });
         }
         json(res, 201, game.addConfigured({ ...body, name: body.name ?? "", provider }));
         return;

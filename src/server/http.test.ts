@@ -104,7 +104,7 @@ describe("lobby start flow", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: "Grok",
+        name: "Ridgeback",
         kind: "llm",
         standingOrders: "Cache one bottle at Camp 3 on the way up.",
       }),
@@ -151,7 +151,7 @@ describe("lobby start flow", () => {
         jsonrpc: "2.0",
         id: 2,
         method: "tools/call",
-        params: { name: "register_climber", arguments: { name: "Grok" } },
+        params: { name: "register_climber", arguments: { name: "Ridgeback" } },
       }),
     });
     const tool = (await call.json()) as { result: { structuredContent: { token: string; phase: string } } };
@@ -178,7 +178,30 @@ describe("lobby start flow", () => {
     const live = (await obs2.json()) as { phase: string; waiting: boolean; view: { you: { name: string } } };
     expect(live.phase).toBe("climbing");
     expect(live.waiting).toBe(false);
-    expect(live.view.you.name).toBe("Grok");
+    expect(live.view.you.name).toBe("Ridgeback");
+  });
+
+  it("treats LLM providers neutrally: no default model, keyless local endpoints, legacy alias", async () => {
+    game = new Game({ generateMs: 0, turnMs: 60_000 });
+    server = createHttpServer(game, publicDir);
+    const port = await listen(server);
+    const add = (body: object) =>
+      fetch(`http://127.0.0.1:${port}/api/lobby/climbers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    expect((await add({ name: "NoModel", provider: "openai-compat", baseUrl: "http://localhost:1/v1" })).status).toBe(400);
+    expect((await add({ name: "NoBase", provider: "openai-compat", model: "m" })).status).toBe(400);
+    expect((await add({ name: "XNoKey", provider: "xai", model: "m" })).status).toBe(400);
+    expect((await add({ name: "XNoModel", provider: "xai", apiKey: "k" })).status).toBe(400);
+    expect((await add({ name: "Local", provider: "openai-compat", baseUrl: "http://localhost:1/v1", model: "m" })).status).toBe(201);
+    const legacy = await add({ name: "Legacy", provider: "spacexai", apiKey: "k", model: "m" });
+    expect(legacy.status).toBe(201);
+    const roster = game.snapshot().lobby.roster;
+    expect(roster.find((r) => r.name === "Legacy")?.provider).toBe("xai");
+    expect(roster.find((r) => r.name === "Local")?.hasKey).toBe(false);
   });
 });
 

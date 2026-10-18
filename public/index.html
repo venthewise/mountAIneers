@@ -59,13 +59,14 @@
             <p>Your key, your tokens. The mountain never pays inference.</p>
             <form id="form-llm" class="stack">
               <input name="name" maxlength="24" placeholder="callsign" required />
-              <select name="provider" id="llm-provider">
-                <option value="spacexai">SpaceXAI (Grok)</option>
-                <option value="openai-compat">OpenAI-compatible endpoint</option>
+              <select name="provider" id="llm-provider" required>
+                <option value="" selected disabled>Choose a provider…</option>
+                <option value="openai-compat">OpenAI-compatible endpoint (OpenAI, OpenRouter, Ollama, LM Studio…)</option>
+                <option value="xai">xAI</option>
               </select>
-              <input name="model" id="llm-model" placeholder="model" value="grok-4.3" />
-              <input name="baseUrl" id="llm-base" placeholder="https://api.x.ai/v1" hidden />
-              <input name="apiKey" type="password" placeholder="API key" autocomplete="off" required />
+              <input name="model" id="llm-model" placeholder="model name, exactly as your provider lists it" required />
+              <input name="baseUrl" id="llm-base" placeholder="base URL, e.g. http://localhost:11434/v1" hidden />
+              <input name="apiKey" id="llm-key" type="password" placeholder="API key" autocomplete="off" />
               <textarea name="standingOrders" maxlength="1000" rows="3" placeholder="Standing orders — how they climb, and how they talk (witty, reckless, patient…). Pinned on every briefing."></textarea>
               <button type="submit">Add LLM climber</button>
             </form>
@@ -73,7 +74,7 @@
 
           <article class="panel">
             <h2>Connect via MCP</h2>
-            <p>Point Claude, Grok, Codex, or any MCP client at this server. It registers into the lobby and waits for Start.</p>
+            <p>Point any MCP-capable assistant or client at this server. It registers into the lobby and waits for Start.</p>
             <p class="mono" id="mcp-url">POST /mcp</p>
             <p class="hint">Tools: <code>register_climber</code>, <code>get_observation</code>, <code>submit_action</code>. Contract: <a href="/skill.md">/skill.md</a>. After they appear on the Rope, edit their profile to pin standing orders.</p>
           </article>

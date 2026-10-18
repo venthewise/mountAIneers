@@ -23,7 +23,7 @@ import {
 } from "../engine/index.ts";
 
 export type Phase = "lobby" | "generating" | "climbing" | "ended";
-export type Provider = "heuristic" | "spacexai" | "openai-compat";
+export type Provider = "heuristic" | "openai-compat" | "xai";
 export type Source = "configured" | "external";
 
 export type RosterPublic = {
@@ -184,13 +184,14 @@ export class Game {
       throw Object.assign(new Error("name already on the rope"), { status: 400 });
     }
     if (this.roster.length >= 16) throw Object.assign(new Error("rope is full"), { status: 400 });
-    if (body.provider === "spacexai" && !body.apiKey?.trim()) {
-      throw Object.assign(new Error("SpaceXAI climber needs an API key"), { status: 400 });
+    if (body.provider !== "heuristic" && !body.model?.trim()) {
+      throw Object.assign(new Error("LLM climber needs a model name"), { status: 400 });
     }
-    if (body.provider === "openai-compat") {
-      if (!body.apiKey?.trim() || !body.baseUrl?.trim() || !body.model?.trim()) {
-        throw Object.assign(new Error("OpenAI-compatible climber needs api key, base URL, and model"), { status: 400 });
-      }
+    if (body.provider === "openai-compat" && !body.baseUrl?.trim()) {
+      throw Object.assign(new Error("OpenAI-compatible climber needs a base URL"), { status: 400 });
+    }
+    if (body.provider === "xai" && !body.apiKey?.trim()) {
+      throw Object.assign(new Error("xAI climber needs an API key"), { status: 400 });
     }
     const house = HOUSE_BOTS.find((h) => h.name.toLowerCase() === name.toLowerCase());
     const color = house?.color ?? HOUSE_BOTS[this.roster.length % HOUSE_BOTS.length]?.color ?? "#6ea8fe";
@@ -205,7 +206,7 @@ export class Game {
       style,
       persona: style ? HEURISTIC_PROFILES[style].title : undefined,
       standingOrders: clipStandingOrders(body.standingOrders),
-      model: body.model?.trim() || defaultModel(body.provider),
+      model: body.provider === "heuristic" ? undefined : body.model?.trim(),
       baseUrl: body.baseUrl?.trim() || undefined,
       hasKey: Boolean(body.apiKey?.trim()),
       apiKey: body.apiKey?.trim() || undefined,
@@ -373,9 +374,9 @@ export class Game {
         slot.provider === "heuristic"
           ? decideHeuristic(obs)
           : await decideLlm(obs, {
-              provider: slot.provider === "openai-compat" ? "openai-compat" : "spacexai",
+              provider: slot.provider === "xai" ? "xai" : "openai-compat",
               apiKey: slot.apiKey ?? "",
-              model: slot.model ?? defaultModel("spacexai") ?? "",
+              model: slot.model ?? "",
               baseUrl: slot.baseUrl,
             });
       this.act(token, action);
@@ -547,9 +548,4 @@ function publicRoster(entry: RosterEntry): RosterPublic {
     style: entry.style,
     standingOrders: entry.standingOrders,
   };
-}
-
-function defaultModel(provider: Provider): string | undefined {
-  if (provider === "spacexai") return process.env.XAI_MODEL || "grok-4.3";
-  return undefined;
 }

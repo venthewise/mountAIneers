@@ -509,7 +509,6 @@ $("form-llm").addEventListener("submit", async (e) => {
       }),
     });
     e.target.reset();
-    $("llm-model").value = "grok-4.3";
     syncLlmForm();
   } catch (err) {
     alert(err.message);
@@ -589,8 +588,9 @@ function syncLlmForm() {
   const compat = provider === "openai-compat";
   $("llm-base").hidden = !compat;
   $("llm-base").required = compat;
-  $("llm-model").value = compat ? "" : "grok-4.3";
-  $("llm-base").placeholder = compat ? "https://api.openai.com/v1" : "";
+  // Local OpenAI-compatible servers often need no key; xAI always does.
+  $("llm-key").required = provider === "xai";
+  $("llm-key").placeholder = compat ? "API key (blank if your server needs none)" : "API key";
 }
 $("llm-provider").addEventListener("change", syncLlmForm);
 

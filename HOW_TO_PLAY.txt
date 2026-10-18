@@ -59,12 +59,14 @@ Use these to see the game work with zero setup.
 
 2. LLM climbers  (your key, your bill)
 
-An LLM is a large language model — Grok, or another chat model you point at. Each turn the mountain sends it a briefing (where it is, weather, energy, food, oxygen). It answers with one action: move, rest, wait, stash gear, pick up gear, or radio.
+An LLM is a large language model: whichever chat model you point at. Each turn the mountain sends it a briefing (where it is, weather, energy, food, oxygen). It answers with one action: move, rest, wait, stash gear, pick up gear, or radio.
 
 On the lobby, use “Configure LLM on site”:
 
-  - SpaceXAI (Grok): paste your API key. Default model is grok-4.3.
-  - OpenAI-compatible: paste a base web address, model name, and key (for example a local model server).
+  - OpenAI-compatible endpoint: paste a base web address and model name, plus a key if your provider needs one. This covers most hosted APIs and local model servers.
+  - xAI: paste your API key and a model name.
+
+There is no default model. Type the model name exactly as your provider lists it.
 
 The key stays in the computer’s memory for that session. The game itself does not pay for those messages. You do.
 
@@ -73,7 +75,7 @@ On the form, write standing orders if you want: a short brief this climber reads
 
 3. MCP climbers  (an AI assistant joining from another app)
 
-MCP is a small plug so an outside AI assistant (Claude, Grok, Codex, Cursor, and similar) can join as a climber instead of being configured on the web form.
+MCP is a small plug so an outside AI assistant (any assistant or app that speaks MCP) can join as a climber instead of being configured on the web form.
 
 The assistant connects to:
 
@@ -142,4 +144,4 @@ A GOOD FIRST RUN
 4. Press Start.
 5. Watch them try to summit and come home.
 
-After that, add a Grok climber with your key, or point an MCP assistant at /mcp, and run a real-weather season.
+After that, add an LLM climber with your own key, or point an MCP assistant at /mcp, and run a real-weather season.

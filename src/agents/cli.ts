@@ -1,5 +1,4 @@
-import { decideGrok } from "./grok.ts";
-import { decideLlm } from "./llm.ts";
+import { decideLlm, type LlmConfig } from "./llm.ts";
 import { decideHeuristic, type Observation } from "../engine/index.ts";
 
 const base = (process.env.MOUNTAIN_URL ?? "http://127.0.0.1:3847").replace(/\/$/, "");
@@ -24,27 +23,54 @@ async function json(path: string, opts: RequestInit & { token?: string } = {}) {
   return data as never;
 }
 
+/**
+ * Pick the LLM from env. Generic OpenAI-compatible vars come first; XAI_* are kept as aliases
+ * for the xAI Responses API. Returns null when nothing is configured (caller falls back to the
+ * rule-based climber) and exits with a clear message when the config is half-done.
+ */
+function llmFromEnv(): LlmConfig | null {
+  const env = process.env;
+  const model = env.LLM_MODEL?.trim();
+  const baseUrl = env.LLM_BASE_URL?.trim();
+  const xaiKey = env.XAI_API_KEY?.trim();
+  if (baseUrl) {
+    if (!model) fail("LLM_BASE_URL is set but LLM_MODEL is not. Set the model name your provider uses.");
+    return { provider: "openai-compat", baseUrl, model: model!, apiKey: env.LLM_API_KEY?.trim() ?? "" };
+  }
+  if (xaiKey) {
+    const xaiModel = env.XAI_MODEL?.trim() || model;
+    if (!xaiModel) fail("XAI_API_KEY is set but no model is. Set XAI_MODEL (or LLM_MODEL).");
+    return {
+      provider: "xai",
+      apiKey: xaiKey,
+      model: xaiModel!,
+      baseUrl: env.XAI_BASE_URL?.trim() || "https://api.x.ai/v1",
+    };
+  }
+  if (model || env.LLM_API_KEY?.trim()) {
+    fail("LLM_MODEL/LLM_API_KEY are set but LLM_BASE_URL is not. Set the base URL of your OpenAI-compatible API.");
+  }
+  return null;
+}
+
+function fail(msg: string): never {
+  console.error(`mountAIneers runner: ${msg}`);
+  process.exit(1);
+}
+
 async function playOne(name: string, kind: "heuristic" | "llm") {
-  const key = process.env.XAI_API_KEY;
-  // Any OpenAI-compatible endpoint (OpenAI, OpenRouter, Ollama, LM Studio, vLLM...) wins if fully set.
-  const compat =
-    process.env.LLM_BASE_URL && process.env.LLM_MODEL
-      ? { baseUrl: process.env.LLM_BASE_URL, model: process.env.LLM_MODEL, apiKey: process.env.LLM_API_KEY ?? "" }
-      : null;
-  const useCompat = kind === "llm" && Boolean(compat);
-  const useGrok = kind === "llm" && !useCompat && Boolean(key);
-  const useLlm = useCompat || useGrok;
+  const llm = kind === "llm" ? llmFromEnv() : null;
+  if (kind === "llm" && !llm) {
+    console.log(
+      `${name}: no LLM configured (set LLM_BASE_URL + LLM_MODEL [+ LLM_API_KEY]); climbing as the built-in rule-based bot.`,
+    );
+  }
   const reg = await json("/api/agents", {
     method: "POST",
-    body: JSON.stringify({ name, kind: useLlm ? "llm" : "heuristic" }),
+    body: JSON.stringify({ name, kind: llm ? "llm" : "heuristic" }),
   });
   const token = (reg as { token: string }).token;
-  const label = useCompat
-    ? `openai-compat/${compat!.model}`
-    : useGrok
-      ? "SpaceXAI/" + (process.env.XAI_MODEL ?? "grok-4.3")
-      : "heuristic";
-  console.log(`roped in ${name} as ${label}`);
+  console.log(`roped in ${name} as ${llm ? `${llm.provider}/${llm.model}` : "heuristic"}`);
 
   let lastTurn = -1;
   let announcedWait = false;
@@ -79,12 +105,7 @@ async function playOne(name: string, kind: "heuristic" | "llm") {
     const turn = obs.view.turn;
     if (turn !== lastTurn) {
       lastTurn = turn;
-      const action =
-        useCompat && compat
-          ? await decideLlm(obs.view, { provider: "openai-compat", ...compat })
-          : useGrok && key
-            ? await decideGrok(obs.view, key)
-            : decideHeuristic(obs.view);
+      const action = llm ? await decideLlm(obs.view, llm) : decideHeuristic(obs.view);
       try {
         await json("/api/action", { method: "POST", token, body: JSON.stringify(action) });
         console.log(`T${turn} ${name}: ${JSON.stringify(action)}`);
@@ -106,7 +127,7 @@ function sleep(ms: number) {
 }
 
 const botCount = Number(arg("--bots") ?? (has("--bots") ? "3" : "0"));
-const name = arg("--name") ?? (botCount ? undefined : "Grok");
+const name = arg("--name") ?? (botCount ? undefined : "Climber");
 const kind = has("--heuristic") ? "heuristic" : "llm";
 
 if (botCount > 0) {

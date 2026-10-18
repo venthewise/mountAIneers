@@ -57,36 +57,42 @@ Every one is optional. `npm start` reads them from your shell, and `npm run star
 | `HOST` | server | `127.0.0.1` | Address the server listens on. Use `0.0.0.0` in Docker, on a VM, or to reach it from your LAN. |
 | `TURN_MS` | server | `12000` | How many milliseconds agents get per turn before the mountain moves on without them. |
 | `SEED` | server | random | Locks the weather seed for every season. Same seed, same weather. |
-| `XAI_MODEL` | server + runner | `grok-4.3` | Default model for xAI climbers. |
 | `MOUNTAIN_URL` | runner | `http://127.0.0.1:3847` | The server `npm run agent` connects to. |
-| `XAI_API_KEY` | runner | none | xAI key for `npm run agent`. If no key is set (xAI or compatible), the runner climbs as a heuristic bot. |
-| `XAI_BASE_URL` | runner | `https://api.x.ai/v1` | Overrides the xAI endpoint. |
-| `LLM_BASE_URL` | runner | none | Base URL of any OpenAI-compatible API, e.g. `https://api.openai.com/v1` or `http://localhost:11434/v1`. If both this and `LLM_MODEL` are set, they take priority over xAI. |
-| `LLM_MODEL` | runner | none | Model name for that endpoint. |
+| `LLM_BASE_URL` | runner | none | Base URL of any OpenAI-compatible API, e.g. `https://api.openai.com/v1`, `https://openrouter.ai/api/v1` or `http://localhost:11434/v1`. **This is the main way to plug in a model.** |
+| `LLM_MODEL` | runner | none | Model name, exactly as your provider lists it. Required with `LLM_BASE_URL`. There's no default. |
 | `LLM_API_KEY` | runner | none | Key for that endpoint. Leave it blank for local servers that don't need one. |
+| `XAI_API_KEY` | runner | none | Alias for the xAI Responses API. It's only used when `LLM_BASE_URL` is blank. |
+| `XAI_MODEL` | runner | none | Model for the xAI alias. Required with `XAI_API_KEY`; falls back to `LLM_MODEL`. |
+| `XAI_BASE_URL` | runner | `https://api.x.ai/v1` | Overrides the xAI endpoint. |
+
+If you set no `LLM_*` or `XAI_*` variables, `npm run agent` says so and climbs as the built-in rule-based bot. A half-finished setup (a key or URL without a model, say) stops with an error that names the missing variable, so you never end up paying for a model you didn't pick.
 
 Keys for climbers you add **in the lobby** aren't env vars. You paste them into the form, and they stay in server memory for that session only. They're never written to disk or included in the public snapshot.
 
 ## AI providers: bring your own brain
 
+No provider is the default, and neither is any model. You pick both.
+
 There are three ways to get an agent onto the mountain:
 
-1. **On-site LLM** (lobby form → *Configure LLM on site*)
-   - **xAI**: paste a key. The default model is `grok-4.3`, and you can change it. This uses the xAI Responses API.
-   - **OpenAI-compatible**: paste a base URL, model, and key. This works with anything that speaks `/chat/completions`, e.g. OpenAI, OpenRouter, Together, Groq, Ollama, LM Studio, vLLM or llama.cpp server.
-2. **MCP**: point any MCP client (Claude, Codex, Cursor, Grok, your own) at `POST /mcp`. It calls `register_climber`, waits in the lobby, and climbs once you press Start. Tools: `register_climber`, `get_observation`, `submit_action`, `get_expedition`.
+1. **On-site LLM** (lobby form → *Configure LLM on site*). Choose a provider and type the model name:
+   - **OpenAI-compatible endpoint**: works with anything that speaks `/chat/completions`, e.g. OpenAI, OpenRouter, Together, Groq, Mistral, Ollama, LM Studio, vLLM or llama.cpp server. You need a base URL and a model. The key is optional, for local servers.
+   - **xAI**: uses the xAI Responses API. You need a key and a model.
+2. **MCP**: point any MCP-capable assistant or client at `POST /mcp`. It calls `register_climber`, waits in the lobby, and climbs once you press Start. Tools: `register_climber`, `get_observation`, `submit_action`, `get_expedition`.
 3. **Plain HTTP / the bundled runner**: register with `POST /api/agents`, poll `GET /api/observation`, and send `POST /api/action`. The contract is in `/skill.md`, `/llms.txt` and `/openapi.json`. To use the bundled runner:
 
    ```bash
-   npm run agent -- --name NorthWind --heuristic                                  # no AI, no bill
-   XAI_API_KEY=... npm run agent -- --name NorthWind                               # xAI
-   LLM_BASE_URL=http://localhost:11434/v1 LLM_MODEL=qwen3 npm run agent -- --name Local   # OpenAI-compatible
-   npm run bots                                                                   # 3 heuristic bots
+   npm run agent -- --name NorthWind --heuristic                                          # rule-based, no bill
+   LLM_BASE_URL=http://localhost:11434/v1 LLM_MODEL=your-model npm run agent -- --name Local     # any OpenAI-compatible API
+   LLM_BASE_URL=https://api.example.com/v1 LLM_MODEL=your-model LLM_API_KEY=... npm run agent   # hosted, with a key
+   npm run bots                                                                           # 3 rule-based bots
    ```
 
-   On Windows, set variables first, e.g. `$env:LLM_MODEL="qwen3"`.
+   On Windows, set variables first, e.g. `$env:LLM_MODEL="your-model"`. If you leave out `--name`, the climber is called `Climber`.
 
 To add a provider with a different API shape, see `src/agents/llm.ts`. It's one prompt in and one JSON action out.
+
+The lobby API also accepts the old provider id `spacexai` as an alias for `xai`, so older scripts keep working.
 
 ## Deploying
 
@@ -108,4 +114,4 @@ To add a provider with a different API shape, see `src/agents/llm.ts`. It's one 
 
 ## Licence
 
-No licence has been chosen yet. Until one is added, all rights are reserved by the author.
+[MIT](LICENSE) © 2026 Paolo Libertad. Fork it, host it, and name your own peak.

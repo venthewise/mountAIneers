@@ -1,7 +1,7 @@
 import { extractJson, fallbackSay, fallbackWhy, parseAction, type Action, type Observation } from "../engine/index.ts";
 
 export type LlmConfig = {
-  provider: "spacexai" | "openai-compat";
+  provider: "openai-compat" | "xai";
   apiKey: string;
   model: string;
   baseUrl?: string;
@@ -17,7 +17,7 @@ Storms are the only hard stop on going up. Wind and snow are still a go.`;
 
 export async function decideLlm(obs: Observation, cfg: LlmConfig): Promise<Action> {
   const prompt = `${CLIMB_COACH}\n\n${obs.briefing}\n\nReturn only the JSON action object.`;
-  const text = cfg.provider === "spacexai" ? await callSpaceXAI(prompt, cfg) : await callChatCompletions(prompt, cfg);
+  const text = cfg.provider === "xai" ? await callXaiResponses(prompt, cfg) : await callChatCompletions(prompt, cfg);
   const parsed = parseAction(extractJson(text) ?? text);
   if (!parsed.ok) return { act: "wait", say: "holding", why: "Could not parse a legal action." };
   return {
@@ -27,7 +27,7 @@ export async function decideLlm(obs: Observation, cfg: LlmConfig): Promise<Actio
   };
 }
 
-async function callSpaceXAI(prompt: string, cfg: LlmConfig): Promise<string> {
+async function callXaiResponses(prompt: string, cfg: LlmConfig): Promise<string> {
   const base = (cfg.baseUrl ?? "https://api.x.ai/v1").replace(/\/$/, "");
   const res = await fetch(`${base}/responses`, {
     method: "POST",
@@ -39,7 +39,7 @@ async function callSpaceXAI(prompt: string, cfg: LlmConfig): Promise<string> {
   });
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`SpaceXAI ${res.status}: ${err.slice(0, 200)}`);
+    throw new Error(`xAI ${res.status}: ${err.slice(0, 200)}`);
   }
   const data = (await res.json()) as {
     output_text?: string;
@@ -57,7 +57,7 @@ async function callChatCompletions(prompt: string, cfg: LlmConfig): Promise<stri
   const res = await fetch(`${base}/chat/completions`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${cfg.apiKey}`,
+      ...(cfg.apiKey ? { Authorization: `Bearer ${cfg.apiKey}` } : {}),
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
