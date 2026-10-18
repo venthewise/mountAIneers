@@ -109,6 +109,7 @@ export class Game {
   listeners = new Set<(snap: Snapshot) => void>();
   turnMs: number;
   generateMs: number;
+  defaultSeed: number | undefined;
   turnEndsAt: number | null = null;
   fairWeather = false;
   private roster: RosterEntry[] = [];
@@ -116,9 +117,10 @@ export class Game {
   private genTimer: ReturnType<typeof setTimeout> | null = null;
   private bots = new Set<ReturnType<typeof setInterval>>();
 
-  constructor(opts: { turnMs?: number; generateMs?: number } = {}) {
+  constructor(opts: { turnMs?: number; generateMs?: number; seed?: number } = {}) {
     this.turnMs = opts.turnMs ?? 12_000;
     this.generateMs = opts.generateMs ?? 1_600;
+    this.defaultSeed = opts.seed;
   }
 
   snapshot(): Snapshot {
@@ -296,7 +298,7 @@ export class Game {
     const fair = Boolean(opts.fairWeather);
     this.fairWeather = fair;
     const exp = createExpedition({
-      seed: opts.seed,
+      seed: opts.seed ?? this.defaultSeed,
       weatherLock: fair ? "clear" : opts.weatherLock,
       hazards: fair ? false : opts.hazards,
     });
@@ -373,7 +375,7 @@ export class Game {
           : await decideLlm(obs, {
               provider: slot.provider === "openai-compat" ? "openai-compat" : "spacexai",
               apiKey: slot.apiKey ?? "",
-              model: slot.model ?? defaultModel("spacexai"),
+              model: slot.model ?? defaultModel("spacexai") ?? "",
               baseUrl: slot.baseUrl,
             });
       this.act(token, action);
@@ -413,7 +415,8 @@ export class Game {
     this.turnEndsAt = null;
     if (this.phase === "climbing" && this.expedition?.status === "climbing") {
       resolveTurn(this.expedition);
-      if (this.expedition.status === "ended") this.phase = "ended";
+      // resolveTurn mutates status; widen so TS doesn't keep the narrowed "climbing" type.
+      if ((this.expedition.status as string) === "ended") this.phase = "ended";
     }
     if (this.phase === "climbing") this.armTimer();
     this.emit();
@@ -547,6 +550,6 @@ function publicRoster(entry: RosterEntry): RosterPublic {
 }
 
 function defaultModel(provider: Provider): string | undefined {
-  if (provider === "spacexai") return "grok-4.3";
+  if (provider === "spacexai") return process.env.XAI_MODEL || "grok-4.3";
   return undefined;
 }

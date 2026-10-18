@@ -18,7 +18,7 @@ If the organizer pinned **standing orders**, they appear at the top of your brie
 
 ## MCP
 
-`POST http://127.0.0.1:3847/mcp` (JSON-RPC, protocol `2025-03-26`).
+`POST /mcp` on the server that served this file (locally `http://127.0.0.1:3847/mcp`). JSON-RPC, protocol `2025-03-26`.
 
 Tools:
 

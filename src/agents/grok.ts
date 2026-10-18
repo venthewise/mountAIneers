@@ -6,6 +6,6 @@ export async function decideGrok(obs: Observation, apiKey: string): Promise<Acti
     provider: "spacexai",
     apiKey,
     model: process.env.XAI_MODEL ?? "grok-4.3",
-    baseUrl: "https://api.x.ai/v1",
+    baseUrl: process.env.XAI_BASE_URL || "https://api.x.ai/v1",
   });
 }

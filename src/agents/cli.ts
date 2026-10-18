@@ -1,4 +1,5 @@
 import { decideGrok } from "./grok.ts";
+import { decideLlm } from "./llm.ts";
 import { decideHeuristic, type Observation } from "../engine/index.ts";
 
 const base = (process.env.MOUNTAIN_URL ?? "http://127.0.0.1:3847").replace(/\/$/, "");
@@ -25,13 +26,25 @@ async function json(path: string, opts: RequestInit & { token?: string } = {}) {
 
 async function playOne(name: string, kind: "heuristic" | "llm") {
   const key = process.env.XAI_API_KEY;
-  const useGrok = kind === "llm" && Boolean(key);
+  // Any OpenAI-compatible endpoint (OpenAI, OpenRouter, Ollama, LM Studio, vLLM...) wins if fully set.
+  const compat =
+    process.env.LLM_BASE_URL && process.env.LLM_MODEL
+      ? { baseUrl: process.env.LLM_BASE_URL, model: process.env.LLM_MODEL, apiKey: process.env.LLM_API_KEY ?? "" }
+      : null;
+  const useCompat = kind === "llm" && Boolean(compat);
+  const useGrok = kind === "llm" && !useCompat && Boolean(key);
+  const useLlm = useCompat || useGrok;
   const reg = await json("/api/agents", {
     method: "POST",
-    body: JSON.stringify({ name, kind: useGrok ? "llm" : "heuristic" }),
+    body: JSON.stringify({ name, kind: useLlm ? "llm" : "heuristic" }),
   });
   const token = (reg as { token: string }).token;
-  console.log(`roped in ${name} as ${useGrok ? "SpaceXAI/" + (process.env.XAI_MODEL ?? "grok-4.3") : "heuristic"}`);
+  const label = useCompat
+    ? `openai-compat/${compat!.model}`
+    : useGrok
+      ? "SpaceXAI/" + (process.env.XAI_MODEL ?? "grok-4.3")
+      : "heuristic";
+  console.log(`roped in ${name} as ${label}`);
 
   let lastTurn = -1;
   let announcedWait = false;
@@ -66,7 +79,12 @@ async function playOne(name: string, kind: "heuristic" | "llm") {
     const turn = obs.view.turn;
     if (turn !== lastTurn) {
       lastTurn = turn;
-      const action = useGrok && key ? await decideGrok(obs.view, key) : decideHeuristic(obs.view);
+      const action =
+        useCompat && compat
+          ? await decideLlm(obs.view, { provider: "openai-compat", ...compat })
+          : useGrok && key
+            ? await decideGrok(obs.view, key)
+            : decideHeuristic(obs.view);
       try {
         await json("/api/action", { method: "POST", token, body: JSON.stringify(action) });
         console.log(`T${turn} ${name}: ${JSON.stringify(action)}`);

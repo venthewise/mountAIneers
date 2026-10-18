@@ -6,10 +6,11 @@ const ITEMS = new Set<Item>(["o2", "food"]);
 
 export function parseAction(raw: unknown): { ok: true; action: Action } | { ok: false; error: string } {
   if (typeof raw === "string") {
+    const text = raw;
     try {
-      raw = JSON.parse(raw);
+      raw = JSON.parse(text);
     } catch {
-      const extracted = extractJson(raw);
+      const extracted = extractJson(text);
       if (!extracted) return { ok: false, error: "action must be JSON" };
       raw = extracted;
     }

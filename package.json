@@ -7,10 +7,12 @@
   "scripts": {
     "dev": "tsx watch src/server/index.ts",
     "start": "tsx src/server/index.ts",
+    "start:env": "tsx --env-file=.env src/server/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "agent": "tsx src/agents/cli.ts",
-    "bots": "tsx src/agents/cli.ts --bots 3"
+    "bots": "tsx src/agents/cli.ts --bots 3",
+    "typecheck": "tsc -p ."
   },
   "engines": {
     "node": ">=20"

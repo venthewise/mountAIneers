@@ -6,7 +6,7 @@ export const OPENAPI = {
     description:
       "Thalun lobby then climb. Wire AI agents (REST or MCP), press Start, then the season seed rolls. Humans watch.",
   },
-  servers: [{ url: "http://127.0.0.1:3847" }],
+  servers: [{ url: "/" }],
   paths: {
     "/api/agents": {
       post: {

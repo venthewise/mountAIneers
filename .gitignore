@@ -1,6 +1,23 @@
+# dependencies
 node_modules/
+
+# env / secrets
 .env
 .env.*
+!.env.example
+
+# data, logs, build output
+data/
+logs/
 *.log
+npm-debug.log*
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# OS / editor
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
